@@ -2,46 +2,62 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Mathlog Ready - LaTeX Art Maker</title>
+    <title>Mathlog Art Maker Pro</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; background: #f0f2f5; }
-        header { background: #1a1a1a; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; background: #f8f9fa; color: #333; }
+        header { background: #2c3e50; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        
         main { display: flex; flex: 1; overflow: hidden; }
-        #palette { width: 280px; background: #fff; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; }
+        
+        /* パレット */
+        #palette { width: 260px; background: #fff; border-right: 1px solid #dee2e6; padding: 15px; overflow-y: auto; }
         .symbol-item { 
             display: inline-block; width: 45px; height: 45px; line-height: 45px; 
-            text-align: center; border: 1px solid #eee; margin: 3px; cursor: pointer; 
-            font-size: 1.2em; background: #fff; border-radius: 8px; transition: all 0.2s;
+            text-align: center; border: 1px solid #eee; margin: 4px; cursor: pointer; 
+            font-size: 20px; background: #fff; border-radius: 4px; transition: 0.2s;
         }
-        .symbol-item:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: #007bff; }
-        #canvas-container { flex: 1; position: relative; background: #fff; background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 25px 25px; overflow: auto; }
-        #canvas { width: 2000px; height: 2000px; position: absolute; }
-        .placed-symbol { position: absolute; cursor: move; font-size: 28px; white-space: nowrap; padding: 5px; }
-        .placed-symbol:hover { outline: 2px solid #007bff; border-radius: 4px; }
-        .delete-btn { position: absolute; top: -10px; right: -10px; background: #ff4d4f; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; line-height: 20px; text-align: center; cursor: pointer; display: none; }
+        .symbol-item:hover { border-color: #3498db; background: #eaf4fb; transform: translateY(-2px); }
+
+        /* キャンバス */
+        #canvas-outer { flex: 1; position: relative; overflow: auto; background: #ddd; }
+        #canvas { 
+            width: 1000px; height: 1000px; background: white; position: relative; 
+            margin: 40px; box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            background-image: radial-gradient(#e0e0e0 1px, transparent 1px); background-size: 20px 20px;
+        }
+        
+        /* 配置記号 */
+        .placed-symbol { position: absolute; cursor: move; user-select: none; font-size: 24px; white-space: nowrap; padding: 5px; line-height: 1; }
+        .placed-symbol:hover { outline: 2px dashed #3498db; background: rgba(52, 152, 219, 0.1); }
+        .delete-btn { position: absolute; top: -12px; right: -12px; background: #e74c3c; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; line-height: 18px; text-align: center; cursor: pointer; display: none; }
         .placed-symbol:hover .delete-btn { display: block; }
-        #output-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 60%; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: none; flex-direction: column; z-index: 1000; }
-        textarea { flex: 1; margin: 15px 0; padding: 10px; font-family: 'Consolas', monospace; border: 1px solid #ccc; border-radius: 4px; }
-        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; z-index:999; }
-        button.primary { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+
+        /* モーダル */
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; z-index:999; }
+        #output-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 70%; background: white; display: none; padding: 25px; flex-direction: column; z-index: 1000; border-radius: 8px; }
+        textarea { flex: 1; font-family: 'Consolas', monospace; margin: 15px 0; padding: 10px; border: 1px solid #ccc; font-size: 14px; }
+        button { padding: 8px 16px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
 
 <header>
-    <strong>Mathlog Art Maker</strong>
+    <strong>LaTeX Math Art Maker</strong>
     <div>
-        <button class="primary" onclick="generateLatex()">Mathlog用コードを出力</button>
-        <button onclick="if(confirm('クリアしますか？')) canvas.innerHTML=''" style="margin-left:10px;">リセット</button>
+        <button class="btn-primary" onclick="showOutput()">Mathlog用コードを出力</button>
+        <button class="btn-danger" onclick="clearCanvas()">クリア</button>
     </div>
 </header>
 
 <main>
     <div id="palette">
-        <p style="font-size: 0.8em; color: #666;">記号をクリックして配置</p>
+        <p style="font-size: 12px; color: #666;">記号を選んでキャンバスへ</p>
         <div id="symbol-list"></div>
     </div>
-    <div id="canvas-container">
+    
+    <div id="canvas-outer">
         <div id="canvas"></div>
     </div>
 </main>
@@ -49,88 +65,116 @@
 <div class="overlay" id="overlay" onclick="closeModal()"></div>
 <div id="output-modal">
     <h3>Mathlog 貼り付け用コード</h3>
-    <p style="font-size: 0.9em; color: #666;">以下のコードをそのままMathlogの本文に貼り付けてください。</p>
-    <textarea id="output-text"></textarea>
-    <button onclick="closeModal()">閉じる</button>
+    <textarea id="output-text" readonly></textarea>
+    <div style="text-align: right;">
+        <button class="btn-primary" onclick="copyToClipboard()">コピーして閉じる</button>
+    </div>
 </div>
 
 <script>
     const symbols = [
         '\\infty', '\\sum', '\\int', '\\heartsuit', '\\Omega', '\\Delta', '\\nabla', 
         '\\cup', '\\cap', '\\times', '\\otimes', '\\alpha', '\\beta', '\\gamma',
-        '\\blacksquare', '\\bigcirc', '\\star', '\\dagger', '\\forall', '\\exists'
+        '\\blacksquare', '\\bigcirc', '\\star', '\\dagger', '\\forall', '\\exists',
+        '\\partial', '\\theta', '\\lambda', '\\omega', '\\text{A}', '\\text{B}'
     ];
 
     const canvas = document.getElementById('canvas');
-    
+    const symbolList = document.getElementById('symbol-list');
+
     // パレット作成
     symbols.forEach(s => {
         const div = document.createElement('div');
         div.className = 'symbol-item';
         div.innerHTML = `\\(${s}\\)`;
-        div.onclick = () => addSymbol(s);
-        document.getElementById('symbol-list').appendChild(div);
+        div.onclick = () => addSymbol(s, 50, 50);
+        symbolList.appendChild(div);
     });
 
-    function addSymbol(tex) {
+    function addSymbol(tex, x, y) {
         const div = document.createElement('div');
         div.className = 'placed-symbol';
-        div.style.left = '100px';
-        div.style.top = '100px';
-        div.innerHTML = `\\(${tex}\\)<span class="delete-btn">×</span>`;
+        div.style.left = x + 'px';
+        div.style.top = y + 'px';
+        div.innerHTML = `<span>\\(${tex}\\)</span><span class="delete-btn">×</span>`;
         div.setAttribute('data-tex', tex);
 
         div.onmousedown = function(e) {
             if(e.target.className === 'delete-btn') { div.remove(); return; }
+            
+            // キャンバス内の相対座標を正しく取得
+            const rect = canvas.getBoundingClientRect();
             let shiftX = e.clientX - div.getBoundingClientRect().left;
             let shiftY = e.clientY - div.getBoundingClientRect().top;
-            document.onmousemove = (e) => {
-                div.style.left = (e.pageX - shiftX) + 'px';
-                div.style.top = (e.pageY - shiftY - 60) + 'px'; // header分調整
+
+            function moveAt(pageX, pageY) {
+                let newX = pageX - rect.left - window.scrollX - shiftX;
+                let newY = pageY - rect.top - window.scrollY - shiftY;
+                div.style.left = newX + 'px';
+                div.style.top = newY + 'px';
+            }
+
+            function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
+            document.addEventListener('mousemove', onMouseMove);
+            
+            document.onmouseup = function() {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.onmouseup = null;
             };
-            document.onmouseup = () => document.onmousemove = null;
         };
+
         canvas.appendChild(div);
-        if(window.MathJax) MathJax.typeset();
+        if(window.MathJax) MathJax.typesetPromise([div]);
     }
 
-    function generateLatex() {
-    const items = document.querySelectorAll('.placed-symbol');
-    if (items.length === 0) return;
+    function showOutput() {
+        const items = document.querySelectorAll('.placed-symbol');
+        if(items.length === 0) return alert("記号を配置してください");
 
-    let minX = Infinity;
-    items.forEach(el => {
-        minX = Math.min(minX, parseInt(el.style.left));
-    });
+        let minX = Infinity, minY = Infinity;
+        items.forEach(el => {
+            minX = Math.min(minX, parseInt(el.style.left));
+            minY = Math.min(minY, parseInt(el.style.top));
+        });
 
-    // Mathlogでエラーが出にくい書き方に変更
-    let code = "$$\n\\Large\n";
-    
-    // 全ての要素を「左端」からの距離で制御する
-    items.forEach(el => {
-        const x = (parseInt(el.style.left) - minX);
-        const y = (parseInt(el.style.top)); // 縦位置
-        const tex = el.getAttribute('data-tex');
+        // Mathlog(KaTeX)で最も安定する makebox 重ね書き方式
+        let code = "$$\n\\Large\n";
+        items.forEach(el => {
+            const x = Math.round(parseInt(el.style.left) - minX);
+            const y = Math.round(parseInt(el.style.top) - minY);
+            const tex = el.getAttribute('data-tex');
+            // KaTeXのエラー回避のため、各コマンドを慎重に連結
+            code += `\\makebox[0pt][l]{\\hspace{${x}px}\\raisebox{-${y}px}{${tex}}}\n`;
+        });
         
-        // \makebox[0pt][l] を使って「幅ゼロの左寄せボックス」を作成し、
-        // その中で水平・垂直移動を完結させる
-        code += `\\makebox[0pt][l]{\\hspace{${x}px}\\raisebox{-${y}px}{${tex}}}\n`;
-    });
-    
-    // 最後にキャンバスの高さ分の透明な支柱を入れて、表示領域を確保する
-    code += "\\phantom{\\rule{0pt}{300px}}\n"; 
-    code += "$$";
+        // 表示領域を確保するための支柱
+        let maxY = 0;
+        items.forEach(el => maxY = Math.max(maxY, parseInt(el.style.top) - minY));
+        code += `\\phantom{\\rule{0pt}{${maxY + 30}px}}\n`;
+        code += "$$";
 
-    document.getElementById('output-text').value = code;
-    // (以下、モーダル表示処理など)
-}
+        document.getElementById('output-text').value = code;
+        document.getElementById('output-modal').style.display = 'flex';
+        document.getElementById('overlay').style.display = 'block';
+    }
+
+    function copyToClipboard() {
+        const textArea = document.getElementById('output-text');
+        textArea.select();
+        document.execCommand('copy');
+        closeModal();
+        alert("コピーしました！Mathlogに貼り付けてください。");
+    }
 
     function closeModal() {
         document.getElementById('output-modal').style.display = 'none';
         document.getElementById('overlay').style.display = 'none';
     }
+
+    function clearCanvas() { if(confirm("キャンバスを空にしますか？")) canvas.innerHTML = ''; }
 </script>
 
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
 </body>
 </html>
