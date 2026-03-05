@@ -95,30 +95,35 @@
     }
 
     function generateLatex() {
-        const items = document.querySelectorAll('.placed-symbol');
-        if(items.length === 0) return;
+    const items = document.querySelectorAll('.placed-symbol');
+    if (items.length === 0) return;
 
-        let minX = Infinity, minY = Infinity;
-        items.forEach(el => {
-            minX = Math.min(minX, parseInt(el.style.left));
-            minY = Math.min(minY, parseInt(el.style.top));
-        });
+    let minX = Infinity;
+    items.forEach(el => {
+        minX = Math.min(minX, parseInt(el.style.left));
+    });
 
-        // Mathlog(KaTeX)で動く「重ね書き座標指定」方式
-        // \rlapで横移動、\raiseboxで縦移動
-        let code = "$$\n\\Large\n";
-        items.forEach(el => {
-            const x = (parseInt(el.style.left) - minX) / 2; // 少し縮尺調整
-            const y = -(parseInt(el.style.top) - minY) / 2;
-            const tex = el.getAttribute('data-tex');
-            code += `\\rlap{\\hspace{${x}pt}\\raisebox{${y}pt}{${tex}}}\n`;
-        });
-        code += "$$";
+    // Mathlogでエラーが出にくい書き方に変更
+    let code = "$$\n\\Large\n";
+    
+    // 全ての要素を「左端」からの距離で制御する
+    items.forEach(el => {
+        const x = (parseInt(el.style.left) - minX);
+        const y = (parseInt(el.style.top)); // 縦位置
+        const tex = el.getAttribute('data-tex');
+        
+        // \makebox[0pt][l] を使って「幅ゼロの左寄せボックス」を作成し、
+        // その中で水平・垂直移動を完結させる
+        code += `\\makebox[0pt][l]{\\hspace{${x}px}\\raisebox{-${y}px}{${tex}}}\n`;
+    });
+    
+    // 最後にキャンバスの高さ分の透明な支柱を入れて、表示領域を確保する
+    code += "\\phantom{\\rule{0pt}{300px}}\n"; 
+    code += "$$";
 
-        document.getElementById('output-text').value = code;
-        document.getElementById('output-modal').style.display = 'flex';
-        document.getElementById('overlay').style.display = 'block';
-    }
+    document.getElementById('output-text').value = code;
+    // (以下、モーダル表示処理など)
+}
 
     function closeModal() {
         document.getElementById('output-modal').style.display = 'none';
