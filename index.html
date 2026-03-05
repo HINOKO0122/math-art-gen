@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX Math Art Generator</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; line-height: 1.6; background: #f4f7f6; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        textarea { width: 100%; height: 200px; font-family: monospace; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .controls { margin: 20px 0; display: flex; gap: 10px; }
+        button { padding: 10px 20px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 4px; font-weight: bold; }
+        button:hover { background: #2980b9; }
+        .output-container { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; position: relative; }
+        pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; font-size: 0.9em; color: #333; }
+        .copy-hint { font-size: 0.8em; color: #7f8c8d; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>LaTeX Math Art Generator</h1>
+    <p>記号をスペース区切りで入力してください。改行すると次の行になります。</p>
+    
+    <textarea id="input" placeholder="\infty \quad \infty&#10; \cup ">\infty \quad \infty
+ \cup </textarea>
+
+    <div class="controls">
+        <button onclick="generate()">LaTeX変換</button>
+        <button onclick="copyToClipboard()" style="background:#27ae60">コードをコピー</button>
+    </div>
+
+    <div class="output-container">
+        <pre id="output">$$ ... $$</pre>
+    </div>
+    <p class="copy-hint">生成されたコードをMathlogに貼り付けてください。</p>
+
+    <script>
+        function generate() {
+            const input = document.getElementById('input').value.trim();
+            if (!input) return;
+
+            // 行ごとに分割し、各行の記号（トークン）を取得
+            const rows = input.split('\n').map(line => line.trim().split(/\s+/));
+            
+            // 最大列数を計算
+            const maxCols = Math.max(...rows.map(r => r.length));
+            
+            // arrayの列定義 (全て中央揃え 'c')
+            const colDef = 'c'.repeat(maxCols);
+
+            // 各行をLaTeX形式に変換（足りない列は空にする）
+            const latexRows = rows.map(row => {
+                const filledRow = [...row];
+                while (filledRow.length < maxCols) {
+                    filledRow.push(""); // 空セルで補完
+                }
+                return filledRow.join(' & ');
+            }).join(' \\\\\n');
+
+            const finalCode = `$$\n\\begin{array}{${colDef}}\n${latexRows}\n\\end{array}\n$$`;
+            document.getElementById('output').textContent = finalCode;
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('output').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("コピーしました！");
+            });
+        }
+        
+        // 初回実行
+        generate();
+    </script>
+</body>
+</html>
